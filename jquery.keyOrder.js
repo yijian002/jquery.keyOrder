@@ -4,13 +4,24 @@
     https://github.com/yijian002/jquery.keyOrder
 */
 
-(function($) {
+(function() {
 
     'use strict';
 
     $.keyOrder = function(opts) {
+        /*settings.element Options:
+        {   
+            el: 'element's selector'
+            key_event: 'keydown', 
+            key_code: 13, 
+            isNext: $.noop, // bool
+            callback: $.noop, 
+            focusback: &.noop, 
+            blurback: &.noop, 
+            is_stop_event: true
+        }*/
         var settings = {
-            element: [], // {key_event: 'keydown', key_code: 13, callback: $.noop, focusback: &.noop, blurback: &.noop, is_stop_event: true}
+            element: [],
             key_code: 13,
             key_event: 'keydown',
             is_stop_event: false // stopPropagation | preventDefault
@@ -34,32 +45,36 @@
 
                 return el[0].tagName;
             },
-            bind: function(el, next_el) {
+            bind: function(el_opts, next_el_opts) {
                 var _this = this;
 
-                el = this.getContainer(el);
-                next_el = next_el ? this.getContainer(next_el) : null;
+                var $el = this.getContainer(el_opts.el),
+                    $next_el = next_el_opts ? this.getContainer(next_el_opts.el) : null;
 
-                var key_event = el.key_event || settings.key_event,
-                    key_code = el.key_code || settings.key_code,
-                    is_stop_event = typeof el.is_stop_event !== 'undefined' ? el.is_stop_event : settings.is_stop_event;
+                var key_event = el_opts.key_event || settings.key_event,
+                    key_code = el_opts.key_code || settings.key_code,
+                    is_stop_event = typeof el_opts.is_stop_event !== 'undefined' ? el_opts.is_stop_event : settings.is_stop_event;
 
-                el.on(key_event, function(e) {
+                $el.off(key_event).on(key_event, function(e) {
                     if (e.keyCode !== key_code) {
                         return;
                     }
 
-                    if (el.callback) {
-                        el.callback(el);
+                    if(el_opts.isNext && !el_opts.isNext()) {
+                        return;
                     }
 
-                    if (next_el) {
-                        next_el.trigger('focus');
+                    if (el_opts.callback) {
+                        el_opts.callback($el);
+                    }
 
-                        var tag_name = _this.getTagName(next_el);
+                    if ($next_el) {
+                        $next_el.trigger('focus');
+
+                        var tag_name = _this.getTagName($next_el);
                         if (tag_name === 'INPUT') {
-                            next_el[0].selectionStart = 0;
-                            next_el[0].selectionEnd = next_el[0].value.length;
+                            $next_el[0].selectionStart = 0;
+                            $next_el[0].selectionEnd = $next_el[0].value.length;
                         }
                     }
 
@@ -69,15 +84,15 @@
                     }
                 });
 
-                if (el.blurback) {
-                    el.on('blur', function() {
-                        el.blurback(el);
+                if (el_opts.blurback) {
+                    $el.off('blur').on('blur', function() {
+                        el_opts.blurback($el);
                     });
                 }
 
-                if (next_el && next_el.focusback) {
-                    next_el.on('focus', function() {
-                        next_el.focusback(next_el);
+                if (next_el_opts && next_el_opts.focusback) {
+                    $next_el.off('focus').on('focus', function() {
+                        next_el_opts.focusback($next_el);
                     });
                 }
             },
@@ -104,4 +119,4 @@
         app.init();
     };
 
-}($ || jQuery));
+}());
