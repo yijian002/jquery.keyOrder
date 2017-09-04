@@ -24,6 +24,7 @@
             element: [],
             key_code: 13,
             key_event: 'keydown',
+            is_off_event: false,
             is_stop_event: false // stopPropagation | preventDefault
         };
 
@@ -55,7 +56,11 @@
                     key_code = el_opts.key_code || settings.key_code,
                     is_stop_event = typeof el_opts.is_stop_event !== 'undefined' ? el_opts.is_stop_event : settings.is_stop_event;
 
-                $el.off(key_event).on(key_event, function(e) {
+                if(settings.is_off_event) {
+                    $el.off(key_event);
+                }
+
+                $el.on(key_event, function(e) {
                     if (e.keyCode !== key_code) {
                         return;
                     }
@@ -76,6 +81,10 @@
                             $next_el[0].selectionStart = 0;
                             $next_el[0].selectionEnd = $next_el[0].value.length;
                         }
+
+                        if (next_el_opts && next_el_opts.focusback) {
+                            next_el_opts.focusback($next_el);
+                        }
                     }
 
                     if (is_stop_event) {
@@ -85,15 +94,19 @@
                 });
 
                 if (el_opts.blurback) {
-                    $el.off('blur').on('blur', function() {
+                    if(settings.is_off_event) {
+                        $el.off('blur');
+                    }
+
+                    $el.on('blur', function() {
                         el_opts.blurback($el);
                     });
                 }
 
                 if (next_el_opts && next_el_opts.focusback) {
-                    $next_el.off('focus').on('focus', function() {
-                        next_el_opts.focusback($next_el);
-                    });
+                    if(settings.is_off_event) {
+                        $next_el.off('focus');
+                    }
                 }
             },
             initEl: function() {
